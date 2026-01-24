@@ -1,19 +1,25 @@
 "use client";
 
-import React from "react"
-
+import React, { useState } from "react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useState } from "react";
-import { Eye, EyeOff, MapPin, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, MapPin, CheckCircle, Loader2, AlertCircle, X } from "lucide-react";
+
+// GOOGLE APPS SCRIPT URL EKA
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8YHaDMs34R86njQecDFeSOhNl_4zC8wwi0d6z8tuWwCcXMzWtf2_zuuld0-WFzxmH/exec";
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({
+    type: null,
+    message: ""
+  });
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -26,19 +32,50 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setStatus({ type: null, message: "" }); // Reset status
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      setStatus({ type: 'error', message: "Passwords do not match!" });
       return;
     }
 
     setIsLoading(true);
-    
-    // Simulate registration
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    alert("Registration functionality requires a database connection. Please connect Supabase or another database to enable user registration.");
-    setIsLoading(false);
+
+    try {
+      await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      // Success
+      setStatus({ 
+        type: 'success', 
+        message: "Registration Successful! Your details have been saved to Google Sheets." 
+      });
+      
+      // Form reset
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        password: "",
+        confirmPassword: "",
+      });
+
+    } catch (error) {
+      setStatus({ 
+        type: 'error', 
+        message: "Something went wrong. Please check your connection and try again." 
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const benefits = [
@@ -55,7 +92,8 @@ export default function RegisterPage() {
       <main className="flex-1 py-12 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start">
-            {/* Benefits */}
+            
+            {/* Left Side: Benefits */}
             <div className="lg:sticky lg:top-24">
               <Link href="/" className="inline-flex items-center gap-2 mb-6">
                 <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
@@ -66,10 +104,7 @@ export default function RegisterPage() {
                 </span>
               </Link>
               
-              <h1 
-                className="text-2xl md:text-3xl font-bold text-foreground mb-4"
-                style={{ fontFamily: 'var(--font-display)' }}
-              >
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4" style={{ fontFamily: 'var(--font-display)' }}>
                 Create Your Account
               </h1>
               <p className="text-muted-foreground mb-8">
@@ -88,37 +123,51 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Form */}
-            <div className="bg-card border border-border rounded-2xl p-6 md:p-8">
+            {/* Right Side: Form */}
+            <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-sm">
               <form onSubmit={handleSubmit} className="space-y-5">
+                
+                {/* Custom Alert Box */}
+                {status.type && (
+                  <div className={`p-4 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
+                    status.type === 'success' 
+                    ? "bg-green-500/10 border border-green-500/50 text-green-600" 
+                    : "bg-destructive/10 border border-destructive/50 text-destructive"
+                  }`}>
+                    {status.type === 'success' ? <CheckCircle className="w-5 h-5 mt-0.5" /> : <AlertCircle className="w-5 h-5 mt-0.5" />}
+                    <div className="flex-1 text-sm font-medium">
+                      {status.message}
+                    </div>
+                    <button type="button" onClick={() => setStatus({ type: null, message: "" })}>
+                      <X className="w-4 h-4 opacity-70 hover:opacity-100" />
+                    </button>
+                  </div>
+                )}
+
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
+                  <div className="space-y-1.5">
                     <Label htmlFor="firstName">First Name</Label>
                     <Input
                       id="firstName"
-                      type="text"
                       placeholder="John"
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="mt-1.5"
                       required
                     />
                   </div>
-                  <div>
+                  <div className="space-y-1.5">
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input
                       id="lastName"
-                      type="text"
                       placeholder="Doe"
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="mt-1.5"
                       required
                     />
                   </div>
                 </div>
 
-                <div>
+                <div className="space-y-1.5">
                   <Label htmlFor="email">Email Address</Label>
                   <Input
                     id="email"
@@ -126,12 +175,11 @@ export default function RegisterPage() {
                     placeholder="you@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="mt-1.5"
                     required
                   />
                 </div>
 
-                <div>
+                <div className="space-y-1.5">
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
@@ -139,30 +187,27 @@ export default function RegisterPage() {
                     placeholder="+94 77 XXX XXXX"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="mt-1.5"
                     required
                   />
                 </div>
 
-                <div>
+                <div className="space-y-1.5">
                   <Label htmlFor="address">Address</Label>
                   <Input
                     id="address"
-                    type="text"
                     placeholder="Your address in Dompe"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="mt-1.5"
                   />
                 </div>
 
-                <div>
+                <div className="space-y-1.5">
                   <Label htmlFor="password">Password</Label>
-                  <div className="relative mt-1.5">
+                  <div className="relative">
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Create a strong password"
+                      placeholder="At least 8 characters"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       className="pr-10"
@@ -173,40 +218,36 @@ export default function RegisterPage() {
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Must be at least 8 characters
-                  </p>
                 </div>
 
-                <div>
+                <div className="space-y-1.5">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
-                    placeholder="Confirm your password"
+                    placeholder="Repeat your password"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className="mt-1.5"
                     required
                   />
                 </div>
 
-                <div className="pt-2">
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Creating account..." : "Create Account"}
-                  </Button>
-                </div>
+                <Button type="submit" className="w-full h-11" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    "Create Account"
+                  )}
+                </Button>
 
-                <p className="text-xs text-center text-muted-foreground">
+                <p className="text-xs text-center text-muted-foreground mt-4">
                   By creating an account, you agree to our{" "}
                   <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link>
                   {" "}and{" "}
@@ -214,9 +255,9 @@ export default function RegisterPage() {
                 </p>
               </form>
 
-              <div className="mt-6 text-center text-sm text-muted-foreground">
+              <div className="mt-6 pt-6 border-t border-border text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link href="/login" className="text-primary font-medium hover:underline">
+                <Link href="/login" className="text-primary font-semibold hover:underline">
                   Sign in
                 </Link>
               </div>
