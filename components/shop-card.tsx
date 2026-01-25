@@ -22,6 +22,7 @@ export function ShopCard({ shop }: ShopCardProps) {
             alt={shop.shop_name}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
+            unoptimized={shop.image?.includes('drive.google.com')}
           />
           <div className="absolute top-3 left-3">
             <Badge variant="secondary" className="bg-card/90 backdrop-blur-sm text-foreground">

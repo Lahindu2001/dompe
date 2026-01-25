@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { MapPin, Menu, X, User, LogOut } from "lucide-react";
-import { useState } from "react";
+import { MapPin, Menu, X, User, LogOut, LayoutDashboard } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,17 +13,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-interface HeaderProps {
-  user?: {
-    firstName: string;
-    lastName: string;
-    email: string;
-  } | null;
-  onLogout?: () => void;
-}
-
-export function Header({ user, onLogout }: HeaderProps) {
+export function Header() {
+  const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 bg-card border-b border-border">
@@ -49,6 +47,9 @@ export function Header({ user, onLogout }: HeaderProps) {
             <Link href="/shops" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               All Shops
             </Link>
+            <Link href="/map" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Shops in Map
+            </Link>
             <Link href="/categories" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Categories
             </Link>
@@ -59,47 +60,62 @@ export function Header({ user, onLogout }: HeaderProps) {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            {user ? (
+            {mounted && isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2 bg-transparent">
+                  <Button variant="outline" className="gap-2 bg-transparent" suppressHydrationWarning>
                     <User className="w-4 h-4" />
                     {user.firstName}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem className="flex flex-col items-start">
                     <span className="font-medium">{user.firstName} {user.lastName}</span>
                     <span className="text-xs text-muted-foreground">{user.email}</span>
+                    <span className="text-xs text-primary font-medium mt-1 capitalize">{user.role}</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  {user.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/dashboard" className="w-full">
+                        <LayoutDashboard className="w-4 h-4 mr-2" />
+                        Admin Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user.role === 'shop_owner' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/owner/dashboard" className="w-full">
+                        <LayoutDashboard className="w-4 h-4 mr-2" />
+                        My Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link href="/profile">My Profile</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/my-reviews">My Reviews</Link>
-                  </DropdownMenuItem>
+                  
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onLogout} className="text-destructive">
+                  <DropdownMenuItem onClick={logout} className="text-destructive">
                     <LogOut className="w-4 h-4 mr-2" />
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
+            ) : mounted ? (
               <>
                 <Link href="/login">
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" suppressHydrationWarning>
                     Sign In
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button size="sm">
+                  <Button size="sm" suppressHydrationWarning>
                     Register
                   </Button>
                 </Link>
               </>
-            )}
+            ) : null}
           </div>
 
           {/* Mobile Menu Button */}
@@ -136,6 +152,13 @@ export function Header({ user, onLogout }: HeaderProps) {
               All Shops
             </Link>
             <Link
+              href="/map"
+              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Shops in Map
+            </Link>
+            <Link
               href="/categories"
               className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
               onClick={() => setMobileMenuOpen(false)}
@@ -150,21 +173,21 @@ export function Header({ user, onLogout }: HeaderProps) {
               About
             </Link>
             <div className="flex gap-2 pt-4 border-t border-border mt-2">
-              {user ? (
-                <Button variant="outline" className="flex-1 bg-transparent" onClick={onLogout}>
+              {mounted && user ? (
+                <Button variant="outline" className="flex-1 bg-transparent" onClick={logout} suppressHydrationWarning>
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
                 </Button>
-              ) : (
+              ) : mounted ? (
                 <>
                   <Link href="/login" className="flex-1">
-                    <Button variant="outline" className="w-full bg-transparent">Sign In</Button>
+                    <Button variant="outline" className="w-full bg-transparent" suppressHydrationWarning>Sign In</Button>
                   </Link>
                   <Link href="/register" className="flex-1">
-                    <Button className="w-full">Register</Button>
+                    <Button className="w-full" suppressHydrationWarning>Register</Button>
                   </Link>
                 </>
-              )}
+              ) : null}
             </div>
           </nav>
         </div>
