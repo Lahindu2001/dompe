@@ -14,7 +14,6 @@ import { useAuth } from "@/contexts/AuthContext";
 // GOOGLE APPS SCRIPT URL
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzjMJIOD_QWkc61GdtJw249OU0lHt9GYynr9qgZ66hjEHqvQ0Zl2pXx8oZOBSLlH_6rJQ/exec";
 
-
 export default function RegisterPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
@@ -47,15 +46,26 @@ export default function RegisterPage() {
     e.preventDefault();
     setStatus({ type: null, message: "" });
 
+    // 1. Password Match Validation
     if (formData.password !== formData.confirmPassword) {
       setStatus({ type: 'error', message: "Passwords do not match!" });
+      return;
+    }
+
+    // 2. Special Character Validation
+    // This regex checks for at least one character that is NOT a letter or a number
+    const specialCharRegex = /[^A-Za-z0-9]/;
+    if (!specialCharRegex.test(formData.password)) {
+      setStatus({ 
+        type: 'error', 
+        message: "Password must contain at least one special character (e.g., @, #, $, %, !, etc.)." 
+      });
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Data tika fetch karaddi formData ekema 'role' eka thiyena nisa wenama hadanna oni ne
       await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
@@ -70,7 +80,7 @@ export default function RegisterPage() {
         message: "Registration Successful! Redirecting to login..." 
       });
       
-      // Form reset (keeping default role)
+      // Form reset
       setFormData({
         firstName: "",
         lastName: "",
@@ -115,7 +125,7 @@ export default function RegisterPage() {
             <div className="lg:sticky lg:top-24">
               <Link href="/" className="inline-flex items-center gap-2 mb-6">
                 <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-                  <MapPin className="w-7 h-7 text-primary-foreground" />
+                  <span className="text-white font-bold text-2xl">D</span>
                 </div>
                 <span className="text-xl font-bold text-foreground">Dompee.lk</span>
               </Link>
@@ -140,7 +150,9 @@ export default function RegisterPage() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {status.type && (
                   <div className={`p-4 rounded-xl flex items-start gap-3 ${
-                    status.type === 'success' ? "bg-green-500/10 text-green-600 border border-green-500/50" : "bg-destructive/10 text-destructive border border-destructive/50"
+                    status.type === 'success' 
+                    ? "bg-green-500/10 text-green-600 border border-green-500/50" 
+                    : "bg-destructive/10 text-destructive border border-destructive/50"
                   }`}>
                     {status.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
                     <div className="flex-1 text-sm font-medium">{status.message}</div>
@@ -177,11 +189,20 @@ export default function RegisterPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="password">Password</Label>
                   <div className="relative">
-                    <Input id="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="pr-10" required minLength={8} />
+                    <Input 
+                      id="password" 
+                      type={showPassword ? "text" : "password"} 
+                      value={formData.password} 
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
+                      className="pr-10" 
+                      required 
+                      minLength={8} 
+                    />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  <p className="text-[10px] text-muted-foreground">Must be 8+ characters and include a special character.</p>
                 </div>
 
                 <div className="space-y-1.5">
@@ -192,6 +213,13 @@ export default function RegisterPage() {
                 <Button type="submit" className="w-full h-11" disabled={isLoading}>
                   {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...</> : "Create Account"}
                 </Button>
+
+                <p className="text-center text-sm text-muted-foreground">
+                  Already have an account?{" "}
+                  <Link href="/login" className="text-primary font-semibold hover:underline">
+                    Login here
+                  </Link>
+                </p>
               </form>
             </div>
           </div>
