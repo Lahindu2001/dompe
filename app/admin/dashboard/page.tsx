@@ -100,7 +100,7 @@ function DashboardContent() {
 
     try {
       setIsDeleting(regNo);
-      // Apps Script එකේ doGet එක බලන්නේ 'id' parameter එකයි
+      // Appsssss Script එකේ doGet එක බලන්නේ 'id' parameter එකයි
       const response = await fetch(`${APPS_SCRIPT_URL}?action=deleteShop&id=${regNo}`);
       const result = await response.json();
 
