@@ -7,7 +7,7 @@
 
 A modern, full-featured local business directory and review platform built to connect the community of **Dompe** with local shops, restaurants, and services.
 
-🔗 **Live Platform:** [www.dompee.lk](https://www.dompee.lk)
+🔗 **Live Platform:** [www.dompe.vercel.app](https://dompe.vercel.app)
 
 ---
 
